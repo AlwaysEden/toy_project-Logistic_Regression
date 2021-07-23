@@ -1,0 +1,39 @@
+import numpy as np
+import pandas as pd
+
+
+#데이터 불러오기 및 필요없는 column 제거
+data = pd.read_csv('/content/Social_Network_Ads.csv')
+data = data.drop(['Unnamed: 0'], axis=1)
+
+#데이터 전처리(원핫인코딩)을 통해 'Gender'열의 숫자화
+data_preprocessed = pd.get_dummies(data, columns= ['Gender'] )
+
+target = data_preprocessed['Purchased'].to_numpy()
+input = data_preprocessed[ ['Age', 'EstimatedSalary', 'Gender_Female', 'Gender_Male'] ].to_numpy()
+
+#train_set과 test_set을 분류함
+from sklearn.model_selection import train_test_split
+train_input, test_input, train_target, test_target = train_test_split(input, target, test_size = 0.2)
+
+#로지스틱 회귀 알고리즘을 통해서 학습시도
+from sklearn.linear_model import LogisticRegression
+lr = LogisticRegression(C = 20)
+lr.fit(train_input, train_target)
+
+#첫 학습의 정확도가 많이 낮아 특성 추출을 통해 정확도를 올리려해보았지만 오히려 역효과였음.
+###from sklearn.preprocessing import PolynomialFeatures
+pp = PolynomialFeatures()
+pp.fit(train_input)
+train_poly = pp.transform(train_input)
+test_poly = pp.transform(test_input)###
+
+#데이터의 개수가 적어서 정확도가 낮은거 같다는 판단하에, 교차검증을 시행해보았지만 별다른 변화는 없었음.
+from sklearn.model_selection import StratifiedKFold, cross_validate 
+score = cross_validate(lr, train_poly, train_target, cv=StratifiedKFold() )
+print(score)
+
+
+
+
+
