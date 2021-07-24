@@ -16,24 +16,38 @@ input = data_preprocessed[ ['Age', 'EstimatedSalary', 'Gender_Female', 'Gender_M
 from sklearn.model_selection import train_test_split
 train_input, test_input, train_target, test_target = train_test_split(input, target, test_size = 0.2)
 
-#로지스틱 회귀 알고리즘을 통해서 학습시도
-from sklearn.linear_model import LogisticRegression
-lr = LogisticRegression(C = 20)
-lr.fit(train_input, train_target)
+
+#두번째 수정할 때 표준점수로 전처리하지 않고 특성추출을 시도했던 것을 발견, StandScale 적용.
+from sklearn.preprocessing import StandardScaler
+ss = StandardScaler()
+ss.fit(train_input)
+train_scaled = ss.transform(train_input)
+test_scaled = ss.transform(test_input)
 
 #첫 학습의 정확도가 많이 낮아 특성 추출을 통해 정확도를 올리려해보았지만 오히려 역효과였음.
-###from sklearn.preprocessing import PolynomialFeatures
+#StandScale 후 특성 추출을 했음.
+from sklearn.preprocessing import PolynomialFeatures
 pp = PolynomialFeatures()
 pp.fit(train_input)
 train_poly = pp.transform(train_input)
-test_poly = pp.transform(test_input)###
+test_poly = pp.transform(test_input)
 
 #데이터의 개수가 적어서 정확도가 낮은거 같다는 판단하에, 교차검증을 시행해보았지만 별다른 변화는 없었음.
+#표준점수로 만든 후 특성추출을 한 결과를 교차검증 해보았는데, 매우 좋은 정확도를 보임.
 from sklearn.model_selection import StratifiedKFold, cross_validate 
 score = cross_validate(lr, train_poly, train_target, cv=StratifiedKFold() )
 print(score)
 
+#로지스틱 회귀 알고리즘을 통해서 학습시도
+from sklearn.linear_model import LogisticRegression
+lr = LogisticRegression(C=20)
+lr.fit(train_input, train_target)
 
+#predict_proba를 통해 어떤 확률로 분류를 했는지 확인함.
+proba=lr.predict_proba(test_poly[:5])
+print(np.round(proba,decimals=3))
 
-
-
+#확률을 확인하는 방식을 바꿔 로지스틱 회귀에서 사용할 수 있는 decision_function과 시그모이드함수 expit을 통해 확률을 확인해봄
+from scipy.special import expit
+decisions = lr.decision_function(test_poly[:5])
+print(np.round(expit(decisions), decimals=3))
